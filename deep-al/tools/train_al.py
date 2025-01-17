@@ -103,8 +103,8 @@ def main(cfg):
     dataset_out_dir = os.path.join(cfg.OUT_DIR, cfg.DATASET.NAME, cfg.MODEL.TYPE)
     if not os.path.exists(dataset_out_dir):
         os.makedirs(dataset_out_dir)
-    # Creating the experiment directory inside the dataset specific directory 
-    # all logs, labeled, unlabeled, validation sets are stroed here 
+    # Creating the experiment directory inside the dataset specific directory
+    # all logs, labeled, unlabeled, validation sets are stroed here
     # E.g., output/CIFAR10/resnet18/{timestamp or cfg.EXP_NAME based on arguments passed}
     if cfg.EXP_NAME == 'auto':
         now = datetime.now()
@@ -130,8 +130,8 @@ def main(cfg):
     print("\n======== PREPARING DATA AND MODEL ========\n")
     cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
     data_obj = Data(cfg)
-    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=True)
-    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=True)
+    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=False)
+    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=False)
     cfg.ACTIVE_LEARNING.INIT_L_RATIO = args.initial_size / train_size
     print("\nDataset {} Loaded Sucessfully.\nTotal Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
     logger.info("Dataset {} Loaded Sucessfully. Total Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
@@ -172,7 +172,7 @@ def main(cfg):
     valSet_loader = data_obj.getIndexesDataLoader(indexes=valSet, batch_size=cfg.TRAIN.BATCH_SIZE, data=train_data)
     test_loader = data_obj.getTestLoader(data=test_data, test_batch_size=cfg.TRAIN.BATCH_SIZE, seed_id=cfg.RNG_SEED)
 
-    # Initialize the model.  
+    # Initialize the model.
     model = model_builder.build_model(cfg)
     print("model: {}\n".format(cfg.MODEL.TYPE))
     logger.info("model: {}\n".format(cfg.MODEL.TYPE))
@@ -247,7 +247,7 @@ def main(cfg):
             delta_avg_lst.append(np.average(delta_lst_float))
             delta_std_lst.append(np.std(delta_lst_float))
 
-        # Active Sample 
+        # Active Sample
         print("======== ACTIVE SAMPLING ========\n")
         logger.info("======== ACTIVE SAMPLING ========\n")
         al_obj = ActiveLearning(data_obj, cfg)
