@@ -61,6 +61,8 @@ def argparser():
     parser.add_argument('--exp-name', help='Experiment Name', required=True, type=str)
     parser.add_argument('--al', help='AL Method', required=True, type=str)
     parser.add_argument('--budget', help='Budget Per Round', required=True, type=int)
+    parser.add_argument('--output-dir', help='Output Directory', required=True, type=str)
+    parser.add_argument('--data-dir', help='Data Directory', required=True, type=str)
     parser.add_argument('--initial_size', help='Size of the initial random labeled set', default=0, type=int)
     parser.add_argument('--seed', help='Random seed', default=1, type=int)
     parser.add_argument('--finetune', help='Whether to continue with existing model between rounds', type=str2bool, default=False)
@@ -96,15 +98,15 @@ def main(cfg):
     # print("Using GPU : {}.\n".format(cfg.GPU_ID))
 
     # Getting the output directory ready (default is "/output")
-    cfg.OUT_DIR = os.path.join(os.path.abspath('../..'), cfg.OUT_DIR)
+    # cfg.OUT_DIR = os.path.join(os.path.abspath('../..'), cfg.OUT_DIR)
     if not os.path.exists(cfg.OUT_DIR):
         os.mkdir(cfg.OUT_DIR)
     # Create "DATASET/MODEL TYPE" specific directory
     dataset_out_dir = os.path.join(cfg.OUT_DIR, cfg.DATASET.NAME, cfg.MODEL.TYPE)
     if not os.path.exists(dataset_out_dir):
         os.makedirs(dataset_out_dir)
-    # Creating the experiment directory inside the dataset specific directory 
-    # all logs, labeled, unlabeled, validation sets are stroed here 
+    # Creating the experiment directory inside the dataset specific directory
+    # all logs, labeled, unlabeled, validation sets are stroed here
     # E.g., output/CIFAR10/resnet18/{timestamp or cfg.EXP_NAME based on arguments passed}
     if cfg.EXP_NAME == 'auto':
         now = datetime.now()
@@ -128,7 +130,7 @@ def main(cfg):
 
     # Dataset preparing steps
     print("\n======== PREPARING DATA AND MODEL ========\n")
-    cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
+    # cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
     data_obj = Data(cfg)
     train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=True)
     test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=True)
@@ -172,7 +174,7 @@ def main(cfg):
     valSet_loader = data_obj.getIndexesDataLoader(indexes=valSet, batch_size=cfg.TRAIN.BATCH_SIZE, data=train_data)
     test_loader = data_obj.getTestLoader(data=test_data, test_batch_size=cfg.TRAIN.BATCH_SIZE, seed_id=cfg.RNG_SEED)
 
-    # Initialize the model.  
+    # Initialize the model.
     model = model_builder.build_model(cfg)
     print("model: {}\n".format(cfg.MODEL.TYPE))
     logger.info("model: {}\n".format(cfg.MODEL.TYPE))
@@ -247,7 +249,7 @@ def main(cfg):
             delta_avg_lst.append(np.average(delta_lst_float))
             delta_std_lst.append(np.std(delta_lst_float))
 
-        # Active Sample 
+        # Active Sample
         print("======== ACTIVE SAMPLING ========\n")
         logger.info("======== ACTIVE SAMPLING ========\n")
         al_obj = ActiveLearning(data_obj, cfg)
@@ -615,6 +617,8 @@ def get_label_epoch(images_loader, model, get_label_meter):
 if __name__ == "__main__":
     args = argparser().parse_args()
     cfg.merge_from_file(args.cfg_file)
+    cfg.OUT_DIR = args.output_dir
+    cfg.DATASET.ROOT_DIR = args.data_dir
     cfg.EXP_NAME = args.exp_name
     cfg.ACTIVE_LEARNING.SAMPLING_FN = args.al
     cfg.ACTIVE_LEARNING.BUDGET_SIZE = args.budget

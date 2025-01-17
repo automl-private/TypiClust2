@@ -26,7 +26,8 @@ def main(
     seed=1,
     output_dir: str = None,
     data_dir: str = None,
-    download: bool = False
+    download: bool = False,
+    pretrain_epochs: int = 100,
 ):
     """
     SimCLR training script (i.e. typiclust's representation learning).
@@ -42,6 +43,7 @@ def main(
     # Retrieve config file
     p = create_config(config_env, config_exp, seed,
                       repo_dir=repo_root+'/repos/TypiClust2/scan/', output_dir=output_dir)
+    p['epochs'] = pretrain_epochs
     print(colored(p, 'red'))
 
     # Model
