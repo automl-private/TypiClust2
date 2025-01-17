@@ -7,11 +7,12 @@ import yaml
 from easydict import EasyDict
 from utils.utils import mkdir_if_missing
 
-def create_config(config_file_env, config_file_exp, seed, num_clusters=None):
+def create_config(config_file_env, config_file_exp, seed, root_dir=None, num_clusters=None):
     # Config for environment path
-    with open(config_file_env, 'r') as stream:
-        root_dir = yaml.safe_load(stream)['root_dir']
-   
+    if root_dir is None:
+        with open(config_file_env, 'r') as stream:
+            root_dir = yaml.safe_load(stream)['root_dir']
+
     with open(config_file_exp, 'r') as stream:
         config = yaml.safe_load(stream)
 
@@ -20,7 +21,7 @@ def create_config(config_file_env, config_file_exp, seed, num_clusters=None):
         config['num_classes'] = num_clusters
 
     cfg = EasyDict()
-   
+
     # Copy
     for k, v in config.items():
         cfg[k] = v
@@ -42,7 +43,7 @@ def create_config(config_file_env, config_file_exp, seed, num_clusters=None):
     if cfg['setup'] in ['scan', 'selflabel']:
         base_dir = os.path.join(root_dir, cfg['train_db_name'])
         scan_dir = os.path.join(base_dir, 'scan')
-        selflabel_dir = os.path.join(base_dir, 'selflabel') 
+        selflabel_dir = os.path.join(base_dir, 'selflabel')
         mkdir_if_missing(base_dir)
         mkdir_if_missing(scan_dir)
         mkdir_if_missing(selflabel_dir)
@@ -54,4 +55,4 @@ def create_config(config_file_env, config_file_exp, seed, num_clusters=None):
         cfg['selflabel_checkpoint'] = os.path.join(selflabel_dir, f'checkpoint_seed{seed}_clusters{num_clusters}.pth.tar')
         cfg['selflabel_model'] = os.path.join(selflabel_dir, f'model_seed{seed}_clusters{num_clusters}.pth.tar')
 
-    return cfg 
+    return cfg
