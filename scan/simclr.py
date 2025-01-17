@@ -25,7 +25,8 @@ def main(
     config_exp: str = None,
     seed=1,
     output_dir: str = None,
-    data_dir: str = None
+    data_dir: str = None,
+    download: bool = False
 ):
     """
     SimCLR training script (i.e. typiclust's representation learning).
@@ -39,7 +40,8 @@ def main(
     """
 
     # Retrieve config file
-    p = create_config(config_env, config_exp, seed, root_dir=output_dir)
+    p = create_config(config_env, config_exp, seed,
+                      repo_dir=repo_root+'/repos/TypiClust2/scan/', output_dir=output_dir)
     print(colored(p, 'red'))
 
     # Model
@@ -61,10 +63,10 @@ def main(
     val_transforms = get_val_transformations(p)
     print('Validation transforms:', val_transforms)
     train_dataset = get_train_dataset(p, train_transforms, to_augmented_dataset=True,
-                                      split='train+unlabeled', root=data_dir, download=False)  #
+                                      split='train+unlabeled', root=data_dir, download=download)  #
     # Split
     # is for stl-10
-    val_dataset = get_val_dataset(p, val_transforms, root=data_dir, download=False)
+    val_dataset = get_val_dataset(p, val_transforms, root=data_dir, download=download)
     train_dataloader = get_train_dataloader(p, train_dataset)
     val_dataloader = get_val_dataloader(p, val_dataset)
     print('Dataset contains {}/{} train/val samples'.format(len(train_dataset), len(val_dataset)))
@@ -73,7 +75,7 @@ def main(
     print(colored('Build MemoryBank', 'blue'))
     base_dataset = get_train_dataset(
         p, val_transforms,
-        split='train', root=data_dir, download=False
+        split='train', root=data_dir, download=download
     )  # Dataset w/o
     # augs for knn eval
     base_dataloader = get_val_dataloader(p, base_dataset)
