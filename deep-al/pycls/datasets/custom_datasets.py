@@ -6,12 +6,13 @@ import pycls.datasets.utils as ds_utils
 
 
 class CIFAR10(torchvision.datasets.CIFAR10):
-    def __init__(self, root, train, transform, test_transform, download=True, only_features= False):
+    def __init__(self, root, seed, train, transform, test_transform, download=True, only_features=
+    False):
         super(CIFAR10, self).__init__(root, train, transform=transform, download=download)
         self.test_transform = test_transform
         self.no_aug = False
         self.only_features = only_features
-        self.features = ds_utils.load_features("CIFAR10", train=train, normalized=False)
+        self.features = ds_utils.load_features("CIFAR10", train=train, normalized=False, seed=seed)
 
 
     def __getitem__(self, index: int):
@@ -125,10 +126,10 @@ class MNIST(torchvision.datasets.MNIST):
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
         img = Image.fromarray(img.numpy(), mode='L')
-        
+
         if self.no_aug:
             if self.test_transform is not None:
-                img = self.test_transform(img)            
+                img = self.test_transform(img)
         else:
             if self.transform is not None:
                 img = self.transform(img)
@@ -156,10 +157,10 @@ class SVHN(torchvision.datasets.SVHN):
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
         img = Image.fromarray(img)
-        
+
         if self.no_aug:
             if self.test_transform is not None:
-                img = self.test_transform(img)            
+                img = self.test_transform(img)
         else:
             if self.transform is not None:
                 img = self.transform(img)

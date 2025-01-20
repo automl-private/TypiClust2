@@ -68,6 +68,7 @@ def argparser():
     parser.add_argument('--initial_delta', help='Relevant only for ProbCover and DCoM', default=0.6, type=float)
     parser.add_argument('--k_logistic', default=50, type=int)
     parser.add_argument('--a_logistic', default=0.8, type=float)
+    parser.add_argument('--root_dir', help='Root directory for the dataset', default='data', type=str)
 
     return parser
 
@@ -130,8 +131,10 @@ def main(cfg):
     print("\n======== PREPARING DATA AND MODEL ========\n")
     cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
     data_obj = Data(cfg)
-    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=False)
-    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=False)
+    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR,
+                                                 seed=cfg.RNG_SEED, isTrain=True, isDownload=False)
+    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR,
+                                               seed=cfg.RNG_SEED, isTrain=False, isDownload=False)
     cfg.ACTIVE_LEARNING.INIT_L_RATIO = args.initial_size / train_size
     print("\nDataset {} Loaded Sucessfully.\nTotal Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
     logger.info("Dataset {} Loaded Sucessfully. Total Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
@@ -623,4 +626,5 @@ if __name__ == "__main__":
     cfg.MODEL.LINEAR_FROM_FEATURES = args.linear_from_features
     cfg.ACTIVE_LEARNING.A_LOGISTIC = args.a_logistic
     cfg.ACTIVE_LEARNING.K_LOGISTIC = args.k_logistic
+    cfg.DATASET.ROOT_DIR = args.root_dir
     main(cfg)

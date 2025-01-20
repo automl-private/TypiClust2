@@ -48,7 +48,7 @@ def argparser():
 def plot_arrays(x_vals, y_vals, x_name, y_name, dataset_name, out_dir, isDebug=False):
     # if not du.is_master_proc():
     #     return
-    
+
     import matplotlib.pyplot as plt
     temp_name = "{}_vs_{}".format(x_name, y_name)
     plt.xlabel(x_name)
@@ -115,8 +115,8 @@ def main(cfg):
     dataset_out_dir = os.path.join(cfg.OUT_DIR, cfg.DATASET.NAME, cfg.MODEL.TYPE)
     if not os.path.exists(dataset_out_dir):
         os.makedirs(dataset_out_dir)
-    # Creating the experiment directory inside the dataset specific directory 
-    # all logs, labeled, unlabeled, validation sets are stroed here 
+    # Creating the experiment directory inside the dataset specific directory
+    # all logs, labeled, unlabeled, validation sets are stroed here
     # E.g., output/CIFAR10/resnet18/{timestamp or cfg.EXP_NAME based on arguments passed}
     if cfg.EXP_NAME == 'auto':
         now = datetime.now()
@@ -163,7 +163,7 @@ def main(cfg):
     valSet_loader = data_obj.getIndexesDataLoader(indexes=valSet, batch_size=cfg.TRAIN.BATCH_SIZE, data=train_data)
     test_loader = data_obj.getTestLoader(data=test_data, test_batch_size=cfg.TRAIN.BATCH_SIZE, seed_id=cfg.RNG_SEED)
 
-    # Initialize the model.  
+    # Initialize the model.
     model = model_builder.build_model(cfg)
     print("model: {}\n".format(cfg.MODEL.TYPE))
     logger.info("model: {}\n".format(cfg.MODEL.TYPE))
@@ -173,13 +173,13 @@ def main(cfg):
     print("optimizer: {}\n".format(optimizer))
     logger.info("optimizer: {}\n".format(optimizer))
 
-    # This is to seamlessly use the code originally written for AL episodes 
+    # This is to seamlessly use the code originally written for AL episodes
     cfg.EPISODE_DIR = cfg.EXP_DIR
 
     # Train model
     print("======== TRAINING ========")
     logger.info("======== TRAINING ========")
-    
+
     best_val_acc, best_val_epoch, checkpoint_file = train_model(trainSet_loader, valSet_loader, model, optimizer, cfg)
 
     print("Best Validation Accuracy: {}\nBest Epoch: {}\n".format(round(best_val_acc, 4), best_val_epoch))
@@ -217,7 +217,7 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
 
     temp_best_val_acc = 0.
     temp_best_val_epoch = 0
-    
+
     # Best checkpoint model and optimizer states
     best_model_state = None
     best_opt_state = None
@@ -237,7 +237,7 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
         # Compute precise BN stats
         if cfg.BN.USE_PRECISE_STATS:
             nu.compute_precise_bn_stats(model, train_loader)
-        
+
 
         # Model evaluation
         if is_eval_epoch(cur_epoch):
@@ -246,14 +246,14 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
             val_set_err = test_epoch(val_loader, model, val_meter, cur_epoch)
             val_set_acc = 100. - val_set_err
             val_loader.dataset.no_aug = False
-            
+
             if temp_best_val_acc < val_set_acc:
                 temp_best_val_acc = val_set_acc
                 temp_best_val_epoch = cur_epoch + 1
 
                 # Save best model and optimizer state for checkpointing
                 model.eval()
-                
+
                 best_model_state = model.module.state_dict() if cfg.NUM_GPUS > 1 else model.state_dict()
                 best_opt_state = optimizer.state_dict()
 
@@ -273,7 +273,7 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
         # Plot arrays
         plot_arrays(x_vals=plot_epoch_xvalues, y_vals=plot_epoch_yvalues, \
         x_name="Epochs", y_name="Loss", dataset_name=cfg.DATASET.NAME, out_dir=cfg.EPISODE_DIR)
-        
+
         plot_arrays(x_vals=val_acc_epochs_x, y_vals=val_acc_epochs_y, \
         x_name="Epochs", y_name="Validation Accuracy", dataset_name=cfg.DATASET.NAME, out_dir=cfg.EPISODE_DIR)
 
@@ -294,7 +294,7 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
 
     plot_arrays(x_vals=plot_it_x_values, y_vals=plot_it_y_values, \
         x_name="Iterations", y_name="Loss", dataset_name=cfg.DATASET.NAME, out_dir=cfg.EPISODE_DIR)
-        
+
     plot_arrays(x_vals=val_acc_epochs_x, y_vals=val_acc_epochs_y, \
         x_name="Epochs", y_name="Validation Accuracy", dataset_name=cfg.DATASET.NAME, out_dir=cfg.EPISODE_DIR)
 
@@ -303,7 +303,7 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
 
     plot_it_x_values = []
     plot_it_y_values = []
-    
+
     best_val_acc = temp_best_val_acc
     best_val_epoch = temp_best_val_epoch
 
@@ -322,7 +322,7 @@ def test_model(test_loader, checkpoint_file, cfg, cur_episode):
 
     model = model_builder.build_model(cfg)
     model = cu.load_checkpoint(checkpoint_file, model)
-    
+
     test_err = test_epoch(test_loader, model, test_meter, cur_episode)
     test_acc = 100. - test_err
 
@@ -462,4 +462,5 @@ if __name__ == "__main__":
     args = argparser().parse_args()
     cfg.merge_from_file(args.cfg_file)
     cfg.EXP_NAME = argparser().parse_args().exp_name
+    cfg.MODEL.LINEAR_FROM_FEATURES = args.linear_from_features
     main(cfg)
