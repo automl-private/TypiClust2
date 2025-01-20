@@ -128,7 +128,7 @@ def main(cfg):
 
     # Dataset preparing steps
     print("\n======== PREPARING DATA AND MODEL ========\n")
-    cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../'), cfg.DATASET.ROOT_DIR)
+    cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
     data_obj = Data(cfg)
     train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=False)
     test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=False)

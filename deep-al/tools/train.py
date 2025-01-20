@@ -40,6 +40,9 @@ def argparser():
     parser = argparse.ArgumentParser(description='Passive Learning - Image Classification')
     parser.add_argument('--cfg', dest='cfg_file', help='Config file', required=True, type=str)
     parser.add_argument('--exp-name', dest='exp_name', help='Experiment Name', required=True, type=str)
+    # FIXME @TIM this line is copied from train_al due to bug in getDataset: what is the correct
+    #  value here?
+    parser.add_argument('--linear_from_features', help='Whether to use a linear layer from self-supervised features', action='store_true')
     return parser
 
 def plot_arrays(x_vals, y_vals, x_name, y_name, dataset_name, out_dir, isDebug=False):
@@ -139,12 +142,14 @@ def main(cfg):
     print("\n======== PREPARING DATA AND MODEL ========\n")
     cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
     data_obj = Data(cfg)
-    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=True)
-    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=True)
-    
+    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True,
+                                                 isDownload=False)
+    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False,
+                                               isDownload=False)
+
     print("\nDataset {} Loaded Sucessfully.\nTotal Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
     logger.info("Dataset {} Loaded Sucessfully. Total Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
-    
+
     trainSet_path, valSet_path = data_obj.makeTVSets(val_split_ratio=cfg.DATASET.VAL_RATIO, data=train_data, \
                                 seed_id=cfg.RNG_SEED, save_dir=cfg.EXP_DIR)
 
@@ -454,6 +459,7 @@ def test_epoch(test_loader, model, test_meter, cur_epoch):
 
 
 if __name__ == "__main__":
-    cfg.merge_from_file(argparser().parse_args().cfg_file)
+    args = argparser().parse_args()
+    cfg.merge_from_file(args.cfg_file)
     cfg.EXP_NAME = argparser().parse_args().exp_name
     main(cfg)
