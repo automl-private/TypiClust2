@@ -130,6 +130,7 @@ def main(cfg):
     # Dataset preparing steps
     print("\n======== PREPARING DATA AND MODEL ========\n")
     cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
+    print(f'root_dir: {os.path.abspath(cfg.DATASET.ROOT_DIR)}')
     data_obj = Data(cfg)
     train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR,
                                                  seed=cfg.RNG_SEED, isTrain=True, isDownload=False)

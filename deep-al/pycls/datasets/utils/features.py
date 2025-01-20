@@ -24,6 +24,8 @@ def load_features(ds_name, seed=1, train=True, normalized=True):
     " load pretrained features for a dataset "
     split = "train" if train else "test"
     fname = DATASET_FEATURES_DICT[split][ds_name].format(seed=seed)
+    import os
+    print (f'Loading features from {os.path.abspath(fname)}')
     if fname.endswith('.npy'):
         features = np.load(fname)
     elif fname.endswith('.pth'):

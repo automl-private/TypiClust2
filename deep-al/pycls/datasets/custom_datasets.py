@@ -8,6 +8,8 @@ import pycls.datasets.utils as ds_utils
 class CIFAR10(torchvision.datasets.CIFAR10):
     def __init__(self, root, seed, train, transform, test_transform, download=True, only_features=
     False):
+        import os
+        print(f'CIFAR10 root: {os.path.abspath(root)}')
         super(CIFAR10, self).__init__(root, train, transform=transform, download=download)
         self.test_transform = test_transform
         self.no_aug = False
