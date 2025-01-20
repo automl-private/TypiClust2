@@ -2,7 +2,7 @@ import numpy as np
 DATASET_FEATURES_DICT = {
     'train':
         {
-            'CIFAR10':'../scan/results/cifar-10/pretext/features_seed{seed}.npy',
+            'CIFAR10':'../../scan/results/cifar-10/pretext/features_seed{seed}.npy',
             'CIFAR100':'../../scan/results/cifar-100/pretext/features_seed{seed}.npy',
             'TINYIMAGENET': '../../scan/results/tiny-imagenet/pretext/features_seed{seed}.npy',
             'IMAGENET50': '../../dino/runs/trainfeat.pth',
@@ -11,7 +11,7 @@ DATASET_FEATURES_DICT = {
         },
     'test':
         {
-            'CIFAR10': '../scan/results/cifar-10/pretext/test_features_seed{seed}.npy',
+            'CIFAR10': '../../scan/results/cifar-10/pretext/test_features_seed{seed}.npy',
             'CIFAR100': '../../scan/results/cifar-100/pretext/test_features_seed{seed}.npy',
             'TINYIMAGENET': '../../scan/results/tiny-imagenet/pretext/test_features_seed{seed}.npy',
             'IMAGENET50': '../../dino/runs/testfeat.pth',
