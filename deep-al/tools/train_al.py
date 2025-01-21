@@ -100,7 +100,7 @@ def main(cfg):
     # Getting the output directory ready (default is "/output")
     cfg.OUT_DIR = os.path.join(os.path.abspath('../..'), cfg.OUT_DIR)
     if not os.path.exists(cfg.OUT_DIR):
-        os.mkdir(cfg.OUT_DIR)
+        os.makedirs(cfg.OUT_DIR, exist_ok=True)
     # Create "DATASET/MODEL TYPE" specific directory
     dataset_out_dir = os.path.join(cfg.OUT_DIR, cfg.DATASET.NAME, cfg.MODEL.TYPE)
     if not os.path.exists(dataset_out_dir):
@@ -116,7 +116,7 @@ def main(cfg):
 
     exp_dir = os.path.join(dataset_out_dir, exp_dir)
     if not os.path.exists(exp_dir):
-        os.mkdir(exp_dir)
+        os.makedirs(exp_dir, exist_ok=True)
         print("Experiment Directory is {}.\n".format(exp_dir))
     else:
         print("Experiment Directory Already Exists: {}. Reusing it may lead to loss of old logs in the directory.\n".format(exp_dir))
@@ -201,7 +201,8 @@ def main(cfg):
         # Creating output directory for the episode
         episode_dir = os.path.join(cfg.EXP_DIR, f'episode_{cur_episode}')
         if not os.path.exists(episode_dir):
-            os.mkdir(episode_dir)
+
+            os.makedirs(episode_dir, exist_ok=True)
         cfg.EPISODE_DIR = episode_dir
 
         # Train model
