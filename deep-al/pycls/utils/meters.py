@@ -22,7 +22,8 @@ class BufferedFileLogger:
             file_name,
             file_path='.',
             buffer_size=1000,
-            header=("metric", "value", "global_step")
+            header=("metric", "value", "global_step"),
+        mode='a'
     ):
         self.file_path = Path(file_path)
         self.file_path.mkdir(parents=True, exist_ok=True)
@@ -32,7 +33,7 @@ class BufferedFileLogger:
 
         self.file = open(
             self.file_path / self.file_name,
-            mode='w',
+            mode=mode,
             newline='',
             buffering=1  # Line buffering
         )
@@ -95,22 +96,23 @@ class ScalarMeter(object):
 class TrainMeter(object):
     """Measures training stats."""
 
-    def __init__(self, epoch_iters):
+    def __init__(self, epoch_iters, cur_iter, seed):
         self.epoch_iters = epoch_iters
         self.max_iter = cfg.OPTIM.MAX_EPOCH * epoch_iters
         self.iter_timer = Timer()
         self.loss = ScalarMeter(cfg.LOG_PERIOD)
         self.loss_total = 0.0
         self.lr = None
+        self.cur_iter = cur_iter
         # Current minibatch errors (smoothed over a window)
         self.mb_top1_err = ScalarMeter(cfg.LOG_PERIOD)
         # Number of misclassified examples
         self.num_top1_mis = 0
         self.num_samples = 0
         self.filelogger = BufferedFileLogger(
-            file_name='training_metrics.csv',
+            file_name=f'training_metrics.csv',
             buffer_size=200,
-            file_path=cfg.OUT_DIR,
+            file_path=cfg.EXP_DIR,
 
             header=("al_budget", "epoch", "top1_err", "loss", 'lr')
         )
@@ -184,7 +186,8 @@ class TrainMeter(object):
     def log_epoch_stats(self, cur_epoch):
         stats = self.get_epoch_stats(cur_epoch)
         lu.log_json_stats(stats)
-        self.filelogger.add_scalar(cur_epoch, int(stats["epoch"].split('/')[0]), stats['top1_err'], stats['loss'], stats['lr'])
+        self.filelogger.add_scalar(self.cur_iter, int(stats["epoch"].split('/')[0]),
+                                   stats['top1_err'], stats['loss'], stats['lr'])
 
     def close(self):
         self.filelogger.close()
@@ -193,7 +196,7 @@ class TrainMeter(object):
 class TestMeter(object):
     """Measures testing stats."""
 
-    def __init__(self, max_iter):
+    def __init__(self, max_iter, cur_iter, seed):
         self.max_iter = max_iter
         self.iter_timer = Timer()
         # Current minibatch errors (smoothed over a window)
@@ -203,10 +206,11 @@ class TestMeter(object):
         # Number of misclassified examples
         self.num_top1_mis = 0
         self.num_samples = 0
+        self.cur_iter = cur_iter
         self.filelogger = BufferedFileLogger(
-            file_name='testing_metrics.csv',
+            file_name=f'testing_metrics.csv',
             buffer_size=1,
-            file_path=cfg.OUT_DIR,
+            file_path=cfg.EXP_DIR,
             header=("al_budget", "epoch", "top1_err", "min_top1_err")
         )
 
@@ -260,7 +264,8 @@ class TestMeter(object):
     def log_epoch_stats(self, cur_epoch):
         stats = self.get_epoch_stats(cur_epoch)
         lu.log_json_stats(stats)
-        self.filelogger.add_scalar(cur_epoch, int(stats["epoch"].split('/')[0]),stats['top1_err'],
+        self.filelogger.add_scalar(self.cur_iter,int(stats["epoch"].split('/')[0]),
+                                   stats['top1_err'],
                                    stats['min_top1_err'])
 
     def close(self):
@@ -270,7 +275,7 @@ class TestMeter(object):
 class ValMeter(object):
     """Measures Validation stats."""
 
-    def __init__(self, max_iter):
+    def __init__(self, max_iter, cur_iter, seed):
         self.max_iter = max_iter
         self.iter_timer = Timer()
         # Current minibatch errors (smoothed over a window)
@@ -280,10 +285,11 @@ class ValMeter(object):
         # Number of misclassified examples
         self.num_top1_mis = 0
         self.num_samples = 0
+        self.cur_iter=cur_iter
         self.filelogger = BufferedFileLogger(
-            file_name='val_metrics.csv',
+            file_name=f'val_metrics.csv',
             buffer_size=200,
-            file_path=cfg.OUT_DIR,
+            file_path=cfg.EXP_DIR,
             header=("al_budget", "epoch", "top1_err", 'min_top1_err')
         )
 
@@ -337,7 +343,8 @@ class ValMeter(object):
     def log_epoch_stats(self, cur_epoch):
         stats = self.get_epoch_stats(cur_epoch)
         lu.log_json_stats(stats)
-        self.filelogger.add_scalar(cur_epoch, int(stats["epoch"].split('/')[0]), (stats['top1_err'],
+        self.filelogger.add_scalar(self.cur_iter, int(stats["epoch"].split('/')[0]),
+                                   (stats['top1_err'],
                                                              stats['min_top1_err']))
 
 

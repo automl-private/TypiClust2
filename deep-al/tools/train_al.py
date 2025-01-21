@@ -209,7 +209,8 @@ def main(cfg):
         print("======== TRAINING ========")
         logger.info("======== TRAINING ========")
 
-        best_val_acc, best_val_epoch, checkpoint_file = train_model(lSet_loader, valSet_loader, model, optimizer, cfg)
+        best_val_acc, best_val_epoch, checkpoint_file = train_model(lSet_loader, valSet_loader,
+                                                                    model, optimizer, cfg, cur_episode)
 
         print("Best Validation Accuracy: {}\nBest Epoch: {}\n".format(round(best_val_acc, 4), best_val_epoch))
         logger.info("EPISODE {} Best Validation Accuracy: {}\tBest Epoch: {}\n".format(cur_episode, round(best_val_acc, 4), best_val_epoch))
@@ -242,7 +243,8 @@ def main(cfg):
                                                     batch_size=cfg.TRAIN.BATCH_SIZE, data=train_data)
             all_labels = np.take(train_data.targets, np.asarray(all_images_idx, dtype=np.int64))
 
-            images_pseudo_labels = get_label_from_model(images_loader, checkpoint_file, cfg)
+            images_pseudo_labels = get_label_from_model(images_loader, checkpoint_file, cfg,
+                                                        cur_iter=cur_episode)
             cfg.ACTIVE_LEARNING.DELTA_LST[
             -1 * cfg.ACTIVE_LEARNING.BUDGET_SIZE:] = al_algo.new_centroids_deltas(lSet_labels,
                                                                           all_labels=all_labels,
@@ -300,7 +302,7 @@ def main(cfg):
 
 
 
-def train_model(train_loader, val_loader, model, optimizer, cfg):
+def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode):
     global plot_episode_xvalues
     global plot_episode_yvalues
 
@@ -314,8 +316,8 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
     loss_fun = losses.get_loss_fun()
 
     # Create meters
-    train_meter = TrainMeter(len(train_loader))
-    val_meter = ValMeter(len(val_loader))
+    train_meter = TrainMeter(len(train_loader), cur_episode, cfg.RNG_SEED)
+    val_meter = ValMeter(len(val_loader), cur_episode, cfg.RNG_SEED)
 
     # Perform the training loop
     # print("Len(train_loader):{}".format(len(train_loader)))
@@ -430,7 +432,7 @@ def test_model(test_loader, checkpoint_file, cfg, cur_episode):
     global plot_it_x_values
     global plot_it_y_values
 
-    test_meter = TestMeter(len(test_loader))
+    test_meter = TestMeter(len(test_loader), cur_episode, seed=cfg.RNG_SEED)
 
     model = model_builder.build_model(cfg)
     model = cu.load_checkpoint(checkpoint_file, model)
@@ -531,11 +533,11 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
     return loss, clf_iter_count
 
 
-def get_label_from_model(images_loader, checkpoint_file, cfg, model=None):
+def get_label_from_model(images_loader, checkpoint_file, cfg, cur_iter, model=None):
     """
     returns the labels of the images according to the checkpoint file model
     """
-    get_label_meter = TestMeter(len(images_loader))
+    get_label_meter = TestMeter(len(images_loader), cur_iter, seed=cfg.RNG_SEED)
     if model is None:
         model = model_builder.build_model(cfg)
         model = cu.load_checkpoint(checkpoint_file, model)
