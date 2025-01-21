@@ -412,6 +412,9 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
     best_val_acc = temp_best_val_acc
     best_val_epoch = temp_best_val_epoch
 
+    train_meter.close()
+    val_meter.close()
+
     return best_val_acc, best_val_epoch, checkpoint_file
 
 
@@ -442,6 +445,8 @@ def test_model(test_loader, checkpoint_file, cfg, cur_episode):
     #
     save_plot_values([plot_episode_xvalues, plot_episode_yvalues], \
         ["plot_episode_xvalues", "plot_episode_yvalues"], out_dir=cfg.EXP_DIR)
+
+    test_meter.close()
 
     return test_acc
 
