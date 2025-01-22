@@ -45,8 +45,8 @@ class BufferedFileLogger:
             buffering=1  # Line buffering
         )
 
+        self.writer = csv.writer(self.file)
         if not exists:
-            self.writer = csv.writer(self.file)
             # Write the header of the CSV file
             self.writer.writerow(header)
 
