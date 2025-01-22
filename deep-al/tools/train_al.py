@@ -152,7 +152,7 @@ def main(cfg):
             uSetPath=cfg.ACTIVE_LEARNING.USET_PATH, valSetPath = cfg.ACTIVE_LEARNING.VALSET_PATH)
     model = model_builder.build_model(cfg).cuda()
 
-    if len(lSet) == 0:
+    if len(lSet) == 0 or len(lSet) == args.initial_size :
         if cfg.ACTIVE_LEARNING.SAMPLING_FN.lower() in ['dcom']:
             print('Labeled Set is Empty - Create and save the first delta values list')
             lSet_deltas = [str(cfg.ACTIVE_LEARNING.INITIAL_DELTA)] * cfg.ACTIVE_LEARNING.BUDGET_SIZE
