@@ -31,15 +31,24 @@ class BufferedFileLogger:
         self.buffer_size = buffer_size
         self.buffer = []
 
+        # check if file exists
+        if not (self.file_path / self.file_name).exists():
+            mode = 'w'
+            exists = False
+        else:
+            exists = True
+
         self.file = open(
             self.file_path / self.file_name,
             mode=mode,
             newline='',
             buffering=1  # Line buffering
         )
-        self.writer = csv.writer(self.file)
-        # Write the header of the CSV file
-        self.writer.writerow(header)
+
+        if not exists:
+            self.writer = csv.writer(self.file)
+            # Write the header of the CSV file
+            self.writer.writerow(header)
 
     def add_scalar(self, *args):
         self.buffer.append(args)
@@ -186,8 +195,7 @@ class TrainMeter(object):
     def log_epoch_stats(self, cur_epoch):
         stats = self.get_epoch_stats(cur_epoch)
         lu.log_json_stats(stats)
-        self.filelogger.add_scalar(self.cur_iter, int(stats["epoch"].split('/')[0]),
-                                   stats['top1_err'], stats['loss'], stats['lr'])
+        self.filelogger.add_scalar(self.cur_iter, int(stats["epoch"].split('/')[0]), stats['top1_err'], stats['loss'], stats['lr'])
 
     def close(self):
         self.filelogger.close()

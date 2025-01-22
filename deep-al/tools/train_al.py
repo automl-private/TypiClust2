@@ -375,8 +375,8 @@ def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode):
         plot_epoch_xvalues.append(cur_epoch+1)
         plot_epoch_yvalues.append(train_loss)
 
-        save_plot_values([plot_epoch_xvalues, plot_epoch_yvalues, plot_it_x_values, plot_it_y_values, val_acc_epochs_x, val_acc_epochs_y],\
-            ["plot_epoch_xvalues", "plot_epoch_yvalues", "plot_it_x_values", "plot_it_y_values","val_acc_epochs_x","val_acc_epochs_y"], out_dir=cfg.EPISODE_DIR, isDebug=False)
+        # save_plot_values([plot_epoch_xvalues, plot_epoch_yvalues, plot_it_x_values, plot_it_y_values, val_acc_epochs_x, val_acc_epochs_y],\
+        #     ["plot_epoch_xvalues", "plot_epoch_yvalues", "plot_it_x_values", "plot_it_y_values","val_acc_epochs_x","val_acc_epochs_y"], out_dir=cfg.EPISODE_DIR, isDebug=False)
         logger.info("Successfully logged numpy arrays!!")
 
         # Plot arrays
@@ -386,8 +386,8 @@ def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode):
         # plot_arrays(x_vals=val_acc_epochs_x, y_vals=val_acc_epochs_y, \
         # x_name="Epochs", y_name="Validation Accuracy", dataset_name=cfg.DATASET.NAME, out_dir=cfg.EPISODE_DIR)
 
-        save_plot_values([plot_epoch_xvalues, plot_epoch_yvalues, plot_it_x_values, plot_it_y_values, val_acc_epochs_x, val_acc_epochs_y], \
-                ["plot_epoch_xvalues", "plot_epoch_yvalues", "plot_it_x_values", "plot_it_y_values","val_acc_epochs_x","val_acc_epochs_y"], out_dir=cfg.EPISODE_DIR)
+        # save_plot_values([plot_epoch_xvalues, plot_epoch_yvalues, plot_it_x_values, plot_it_y_values, val_acc_epochs_x, val_acc_epochs_y], \
+        #         ["plot_epoch_xvalues", "plot_epoch_yvalues", "plot_it_x_values", "plot_it_y_values","val_acc_epochs_x","val_acc_epochs_y"], out_dir=cfg.EPISODE_DIR)
 
         print('Training Epoch: {}/{}\tTrain Loss: {}\tVal Accuracy: {}'.format(cur_epoch+1, cfg.OPTIM.MAX_EPOCH, round(train_loss, 4), round(val_set_acc, 4)))
 
@@ -446,8 +446,8 @@ def test_model(test_loader, checkpoint_file, cfg, cur_episode):
     # plot_arrays(x_vals=plot_episode_xvalues, y_vals=plot_episode_yvalues, \
     #     x_name="Episodes", y_name="Test Accuracy", dataset_name=cfg.DATASET.NAME, out_dir=cfg.EXP_DIR)
     #
-    save_plot_values([plot_episode_xvalues, plot_episode_yvalues], \
-        ["plot_episode_xvalues", "plot_episode_yvalues"], out_dir=cfg.EXP_DIR)
+    # save_plot_values([plot_episode_xvalues, plot_episode_yvalues], \
+    #     ["plot_episode_xvalues", "plot_episode_yvalues"], out_dir=cfg.EXP_DIR)
 
     test_meter.close()
 
@@ -514,7 +514,7 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
             #because cur_epoch starts with 0
             plot_it_x_values.append((cur_epoch)*len_train_loader + cur_iter)
             plot_it_y_values.append(loss)
-            save_plot_values([plot_it_x_values, plot_it_y_values],["plot_it_x_values", "plot_it_y_values"], out_dir=cfg.EPISODE_DIR, isDebug=False)
+            # save_plot_values([plot_it_x_values, plot_it_y_values],["plot_it_x_values", "plot_it_y_values"], out_dir=cfg.EPISODE_DIR, isDebug=False)
             # print(plot_it_x_values)
             # print(plot_it_y_values)
             #Plot loss graphs
