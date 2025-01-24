@@ -247,6 +247,9 @@ class DCoM:
             with torch.no_grad():
                 x_u = x_u.cuda(0)
                 temp_u_rank = torch.nn.functional.softmax(clf(x_u), dim=1)
+
+                if i % 100 == 0:
+                    logger.info(f"i: {i}, temp_u_rank: {temp_u_rank}")
                 temp_u_rank, _ = torch.sort(temp_u_rank, descending=True)
                 difference = temp_u_rank[:, 0] - temp_u_rank[:, 1]
 
