@@ -6,6 +6,7 @@ import numpy as np
 
 import torch
 from copy import deepcopy
+from smac_optimizer import SmacTuner
 
 # local
 
@@ -173,7 +174,12 @@ def main(cfg):
     lSet_loader = data_obj.getIndexesDataLoader(indexes=lSet, batch_size=cfg.TRAIN.BATCH_SIZE, data=train_data)
     valSet_loader = data_obj.getIndexesDataLoader(indexes=valSet, batch_size=cfg.TRAIN.BATCH_SIZE, data=train_data)
     test_loader = data_obj.getTestLoader(data=test_data, test_batch_size=cfg.TRAIN.BATCH_SIZE, seed_id=cfg.RNG_SEED)
+    
+    #SMAC
+    smac = SmacTuner(cfg, lSet_loader, valSet_loader)
+    cfg = smac.smac_optimize()
 
+    
     # Initialize the model.
     model = model_builder.build_model(cfg)
     print("model: {}\n".format(cfg.MODEL.TYPE))
