@@ -292,6 +292,11 @@ def main(cfg):
         if not cfg.ACTIVE_LEARNING.FINE_TUNE:
             # start model from scratch
             print('Starting model from scratch - ignoring existing weights.')
+            
+            #SMAC
+            smac = SmacTuner(cfg, lSet_loader, valSet_loader)
+            cfg = smac.smac_optimize()
+            
             model = model_builder.build_model(cfg)
             # Construct the optimizer
             optimizer = optim.construct_optimizer(cfg, model)
