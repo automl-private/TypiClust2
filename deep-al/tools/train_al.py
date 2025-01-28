@@ -62,7 +62,6 @@ def argparser():
     parser.add_argument('--al', help='AL Method', required=True, type=str)
     parser.add_argument('--budget', help='Budget Per Round', required=True, type=int)
     parser.add_argument('--output-dir', help='Output Directory', required=True, type=str)
-    parser.add_argument('--data-dir', help='Data Directory', required=True, type=str)
     parser.add_argument('--initial_size', help='Size of the initial random labeled set', default=0, type=int)
     parser.add_argument('--seed', help='Random seed', default=1, type=int)
     parser.add_argument('--finetune', help='Whether to continue with existing model between rounds', type=str2bool, default=False)
@@ -70,6 +69,7 @@ def argparser():
     parser.add_argument('--initial_delta', help='Relevant only for ProbCover and DCoM', default=0.6, type=float)
     parser.add_argument('--k_logistic', default=50, type=int)
     parser.add_argument('--a_logistic', default=0.8, type=float)
+    parser.add_argument('--root_dir', help='Root directory for the dataset', default='data', type=str)
 
     return parser
 
@@ -98,9 +98,9 @@ def main(cfg):
     # print("Using GPU : {}.\n".format(cfg.GPU_ID))
 
     # Getting the output directory ready (default is "/output")
-    # cfg.OUT_DIR = os.path.join(os.path.abspath('../..'), cfg.OUT_DIR)
+    cfg.OUT_DIR = os.path.join(os.path.abspath('../..'), cfg.OUT_DIR)
     if not os.path.exists(cfg.OUT_DIR):
-        os.mkdir(cfg.OUT_DIR)
+        os.makedirs(cfg.OUT_DIR, exist_ok=True)
     # Create "DATASET/MODEL TYPE" specific directory
     dataset_out_dir = os.path.join(cfg.OUT_DIR, cfg.DATASET.NAME, cfg.MODEL.TYPE)
     if not os.path.exists(dataset_out_dir):
@@ -116,7 +116,7 @@ def main(cfg):
 
     exp_dir = os.path.join(dataset_out_dir, exp_dir)
     if not os.path.exists(exp_dir):
-        os.mkdir(exp_dir)
+        os.makedirs(exp_dir, exist_ok=True)
         print("Experiment Directory is {}.\n".format(exp_dir))
     else:
         print("Experiment Directory Already Exists: {}. Reusing it may lead to loss of old logs in the directory.\n".format(exp_dir))
@@ -130,10 +130,13 @@ def main(cfg):
 
     # Dataset preparing steps
     print("\n======== PREPARING DATA AND MODEL ========\n")
-    # cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
+    cfg.DATASET.ROOT_DIR = os.path.join(os.path.abspath('../..'), cfg.DATASET.ROOT_DIR)
+    print(f'root_dir: {os.path.abspath(cfg.DATASET.ROOT_DIR)}')
     data_obj = Data(cfg)
-    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=True, isDownload=True)
-    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR, isTrain=False, isDownload=True)
+    train_data, train_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR,
+                                                 seed=cfg.RNG_SEED, isTrain=True, isDownload=False)
+    test_data, test_size = data_obj.getDataset(save_dir=cfg.DATASET.ROOT_DIR,
+                                               seed=cfg.RNG_SEED, isTrain=False, isDownload=False)
     cfg.ACTIVE_LEARNING.INIT_L_RATIO = args.initial_size / train_size
     print("\nDataset {} Loaded Sucessfully.\nTotal Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
     logger.info("Dataset {} Loaded Sucessfully. Total Train Size: {} and Total Test Size: {}\n".format(cfg.DATASET.NAME, train_size, test_size))
@@ -149,7 +152,7 @@ def main(cfg):
             uSetPath=cfg.ACTIVE_LEARNING.USET_PATH, valSetPath = cfg.ACTIVE_LEARNING.VALSET_PATH)
     model = model_builder.build_model(cfg).cuda()
 
-    if len(lSet) == 0:
+    if len(lSet) == 0 or len(lSet) == args.initial_size :
         if cfg.ACTIVE_LEARNING.SAMPLING_FN.lower() in ['dcom']:
             print('Labeled Set is Empty - Create and save the first delta values list')
             lSet_deltas = [str(cfg.ACTIVE_LEARNING.INITIAL_DELTA)] * cfg.ACTIVE_LEARNING.BUDGET_SIZE
@@ -198,14 +201,16 @@ def main(cfg):
         # Creating output directory for the episode
         episode_dir = os.path.join(cfg.EXP_DIR, f'episode_{cur_episode}')
         if not os.path.exists(episode_dir):
-            os.mkdir(episode_dir)
+
+            os.makedirs(episode_dir, exist_ok=True)
         cfg.EPISODE_DIR = episode_dir
 
         # Train model
         print("======== TRAINING ========")
         logger.info("======== TRAINING ========")
 
-        best_val_acc, best_val_epoch, checkpoint_file = train_model(lSet_loader, valSet_loader, model, optimizer, cfg)
+        best_val_acc, best_val_epoch, checkpoint_file = train_model(lSet_loader, valSet_loader,
+                                                                    model, optimizer, cfg, cur_episode)
 
         print("Best Validation Accuracy: {}\nBest Epoch: {}\n".format(round(best_val_acc, 4), best_val_epoch))
         logger.info("EPISODE {} Best Validation Accuracy: {}\tBest Epoch: {}\n".format(cur_episode, round(best_val_acc, 4), best_val_epoch))
@@ -238,7 +243,8 @@ def main(cfg):
                                                     batch_size=cfg.TRAIN.BATCH_SIZE, data=train_data)
             all_labels = np.take(train_data.targets, np.asarray(all_images_idx, dtype=np.int64))
 
-            images_pseudo_labels = get_label_from_model(images_loader, checkpoint_file, cfg)
+            images_pseudo_labels = get_label_from_model(images_loader, checkpoint_file, cfg,
+                                                        cur_iter=cur_episode)
             cfg.ACTIVE_LEARNING.DELTA_LST[
             -1 * cfg.ACTIVE_LEARNING.BUDGET_SIZE:] = al_algo.new_centroids_deltas(lSet_labels,
                                                                           all_labels=all_labels,
@@ -296,7 +302,7 @@ def main(cfg):
 
 
 
-def train_model(train_loader, val_loader, model, optimizer, cfg):
+def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode):
     global plot_episode_xvalues
     global plot_episode_yvalues
 
@@ -310,8 +316,8 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
     loss_fun = losses.get_loss_fun()
 
     # Create meters
-    train_meter = TrainMeter(len(train_loader))
-    val_meter = ValMeter(len(val_loader))
+    train_meter = TrainMeter(len(train_loader), cur_episode, cfg.RNG_SEED)
+    val_meter = ValMeter(len(val_loader), cur_episode, cfg.RNG_SEED)
 
     # Perform the training loop
     # print("Len(train_loader):{}".format(len(train_loader)))
@@ -409,6 +415,9 @@ def train_model(train_loader, val_loader, model, optimizer, cfg):
     best_val_acc = temp_best_val_acc
     best_val_epoch = temp_best_val_epoch
 
+    train_meter.close()
+    val_meter.close()
+
     return best_val_acc, best_val_epoch, checkpoint_file
 
 
@@ -423,7 +432,7 @@ def test_model(test_loader, checkpoint_file, cfg, cur_episode):
     global plot_it_x_values
     global plot_it_y_values
 
-    test_meter = TestMeter(len(test_loader))
+    test_meter = TestMeter(len(test_loader), cur_episode, seed=cfg.RNG_SEED)
 
     model = model_builder.build_model(cfg)
     model = cu.load_checkpoint(checkpoint_file, model)
@@ -439,6 +448,8 @@ def test_model(test_loader, checkpoint_file, cfg, cur_episode):
     #
     # save_plot_values([plot_episode_xvalues, plot_episode_yvalues], \
     #     ["plot_episode_xvalues", "plot_episode_yvalues"], out_dir=cfg.EXP_DIR)
+
+    test_meter.close()
 
     return test_acc
 
@@ -522,11 +533,11 @@ def train_epoch(train_loader, model, loss_fun, optimizer, train_meter, cur_epoch
     return loss, clf_iter_count
 
 
-def get_label_from_model(images_loader, checkpoint_file, cfg, model=None):
+def get_label_from_model(images_loader, checkpoint_file, cfg, cur_iter, model=None):
     """
     returns the labels of the images according to the checkpoint file model
     """
-    get_label_meter = TestMeter(len(images_loader))
+    get_label_meter = TestMeter(len(images_loader), cur_iter, seed=cfg.RNG_SEED)
     if model is None:
         model = model_builder.build_model(cfg)
         model = cu.load_checkpoint(checkpoint_file, model)
@@ -627,4 +638,5 @@ if __name__ == "__main__":
     cfg.MODEL.LINEAR_FROM_FEATURES = args.linear_from_features
     cfg.ACTIVE_LEARNING.A_LOGISTIC = args.a_logistic
     cfg.ACTIVE_LEARNING.K_LOGISTIC = args.k_logistic
+    cfg.DATASET.ROOT_DIR = args.root_dir
     main(cfg)

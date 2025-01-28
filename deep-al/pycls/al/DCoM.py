@@ -5,6 +5,10 @@ from sklearn.preprocessing import MinMaxScaler
 import pycls.datasets.utils as ds_utils
 from tqdm import tqdm
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class DCoM:
     """
     AL algorithm that selects the next centroids based on point density and model confidence, which measured
@@ -243,6 +247,9 @@ class DCoM:
             with torch.no_grad():
                 x_u = x_u.cuda(0)
                 temp_u_rank = torch.nn.functional.softmax(clf(x_u), dim=1)
+
+                if i % 100 == 0:
+                    logger.info(f"i: {i}, temp_u_rank: {temp_u_rank}")
                 temp_u_rank, _ = torch.sort(temp_u_rank, descending=True)
                 difference = temp_u_rank[:, 0] - temp_u_rank[:, 1]
 
@@ -258,6 +265,8 @@ class DCoM:
         scaler = MinMaxScaler()
         normalized_margin_result = scaler.fit_transform(margin_result)
         final_margin_result = np.array(normalized_margin_result.flatten().tolist())
+
+        logger.info(f"{pd.Series(final_margin_result).describe()}, \n, {pd.Series(final_margin_result).value_counts()}")
         return final_margin_result
 
     @staticmethod

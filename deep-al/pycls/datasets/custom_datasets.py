@@ -6,13 +6,15 @@ import pycls.datasets.utils as ds_utils
 
 
 class CIFAR10(torchvision.datasets.CIFAR10):
-    def __init__(self, root, train, transform, test_transform, download=True, only_features= False):
+    def __init__(self, root, seed, train, transform, test_transform, download=True, only_features=
+    False):
+        import os
+        print(f'CIFAR10 root: {os.path.abspath(root)}')
         super(CIFAR10, self).__init__(root, train, transform=transform, download=download)
         self.test_transform = test_transform
         self.no_aug = False
         self.only_features = only_features
-        self.features = ds_utils.load_features(ds_name="CIFAR10", data_dir=root, train=train,
-                                               normalized=False)
+        self.features = ds_utils.load_features("CIFAR10", train=train, normalized=False, seed=seed)
 
 
     def __getitem__(self, index: int):
