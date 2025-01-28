@@ -1,5 +1,4 @@
 import logging
-import pdb
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,10 +17,15 @@ from ConfigSpace import ConfigurationSpace, Float, Categorical, Integer, EqualsC
 from omegaconf import DictConfig, OmegaConf
 from yacs.config import CfgNode
 
+import yaml
+
+from yacs.config import CfgNode
 
 class SmacTuner:
     def __init__(self, cfg, train_func, lSet_loader, valSet_loader, cur_episode):
         self.train_model = train_func
+
+        cfg = yaml.safe_load(cfg.dump())
         self.base_config  = cfg
         self.g  = self.convert_dot_notation_to_nested(cfg)
         self.lSet_loader = lSet_loader
@@ -92,7 +96,7 @@ class SmacTuner:
 
     def tae_runner(self, cfg, seed=0, budget=0):
         c = self.convert_dot_notation_to_nested(cfg)
-        new_cfg = OmegaConf.merge(self.base_config, DictConfig(self.g), DictConfig(c))
+        new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
 
         model =  resnet18(num_classes=10, use_dropout=True)
 
@@ -134,10 +138,8 @@ class SmacTuner:
         c = self.convert_dot_notation_to_nested(incumbent)
         new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
 
-        # obtain a dict from the OmegaConf object
-        pdb.set_trace()
+
         new_cfg = OmegaConf.to_container(new_cfg, resolve=True)
 
         new_cfg = CfgNode(new_cfg)
-
         return new_cfg
