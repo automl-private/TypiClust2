@@ -1,4 +1,5 @@
 import logging
+import pdb
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,15 +16,17 @@ import numpy as np
 import yaml
 from ConfigSpace import ConfigurationSpace, Float, Categorical, Integer, EqualsCondition
 from omegaconf import DictConfig, OmegaConf
+from yacs.config import CfgNode
 
 
 class SmacTuner:
-    def __init__(self, cfg, train_func, lSet_loader, valSet_loader):
+    def __init__(self, cfg, train_func, lSet_loader, valSet_loader, cur_episode):
         self.train_model = train_func
         self.base_config  = cfg
         self.g  = self.convert_dot_notation_to_nested(cfg)
         self.lSet_loader = lSet_loader
         self.valSet_loader = valSet_loader
+        self.cur_episode = cur_episode
 
 
 
@@ -96,7 +99,7 @@ class SmacTuner:
         optimizer = optim.construct_optimizer(new_cfg, model)
 
         best_val_acc, _, checkpoint_file = self.train_model(self.lSet_loader, self.valSet_loader, model,
-                                             optimizer, new_cfg)
+                                             optimizer, new_cfg, self.cur_episode, hpopt=True)
         return 1-best_val_acc
 
     def smac_optimize(self):
@@ -129,6 +132,12 @@ class SmacTuner:
             incumbent = smac.solver.incumbent
 
         c = self.convert_dot_notation_to_nested(incumbent)
-        new_cfg = OmegaConf.merge(self.base_config, DictConfig(self.g), DictConfig(c))
+        new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
+
+        # obtain a dict from the OmegaConf object
+        pdb.set_trace()
+        new_cfg = OmegaConf.to_container(new_cfg, resolve=True)
+
+        new_cfg = CfgNode(new_cfg)
 
         return new_cfg

@@ -105,7 +105,7 @@ class ScalarMeter(object):
 class TrainMeter(object):
     """Measures training stats."""
 
-    def __init__(self, epoch_iters, cur_iter, seed):
+    def __init__(self, epoch_iters, cur_iter, seed, hpopt=False):
         self.epoch_iters = epoch_iters
         self.max_iter = cfg.OPTIM.MAX_EPOCH * epoch_iters
         self.iter_timer = Timer()
@@ -119,7 +119,7 @@ class TrainMeter(object):
         self.num_top1_mis = 0
         self.num_samples = 0
         self.filelogger = BufferedFileLogger(
-            file_name=f'training_metrics.csv',
+            file_name=f'training_metrics.csv' if not hpopt else f'training_metrics_hpopt.csv',
             buffer_size=200,
             file_path=cfg.EXP_DIR,
 
@@ -283,7 +283,7 @@ class TestMeter(object):
 class ValMeter(object):
     """Measures Validation stats."""
 
-    def __init__(self, max_iter, cur_iter, seed):
+    def __init__(self, max_iter, cur_iter, seed, hpopt=False):
         self.max_iter = max_iter
         self.iter_timer = Timer()
         # Current minibatch errors (smoothed over a window)
@@ -295,7 +295,7 @@ class ValMeter(object):
         self.num_samples = 0
         self.cur_iter=cur_iter
         self.filelogger = BufferedFileLogger(
-            file_name=f'val_metrics.csv',
+            file_name=f'val_metrics.csv' if not hpopt else f'val_metrics_hpopt.csv',
             buffer_size=200,
             file_path=cfg.EXP_DIR,
             header=("al_budget", "epoch", "top1_err", 'min_top1_err')

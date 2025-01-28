@@ -179,7 +179,7 @@ def main(cfg):
     test_loader = data_obj.getTestLoader(data=test_data, test_batch_size=cfg.TRAIN.BATCH_SIZE, seed_id=cfg.RNG_SEED)
 
     #SMAC
-    smac = SmacTuner(cfg, train_model, lSet_loader, valSet_loader)
+    smac = SmacTuner(cfg, train_model, lSet_loader, valSet_loader, cur_episode=0)
     cfg = smac.smac_optimize()
 
 
@@ -300,7 +300,7 @@ def main(cfg):
             print('Starting model from scratch - ignoring existing weights.')
 
             #SMAC
-            smac = SmacTuner(cfg, lSet_loader, valSet_loader)
+            smac = SmacTuner(cfg, train_model, lSet_loader, valSet_loader, cur_episode)
             cfg = smac.smac_optimize()
 
             model = model_builder.build_model(cfg)
@@ -313,7 +313,7 @@ def main(cfg):
 
 
 
-def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode):
+def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode, hpopt=False):
     global plot_episode_xvalues
     global plot_episode_yvalues
 
@@ -327,8 +327,8 @@ def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode):
     loss_fun = losses.get_loss_fun()
 
     # Create meters
-    train_meter = TrainMeter(len(train_loader), cur_episode, cfg.RNG_SEED)
-    val_meter = ValMeter(len(val_loader), cur_episode, cfg.RNG_SEED)
+    train_meter = TrainMeter(len(train_loader), cur_episode, cfg.RNG_SEED, hpopt=hpopt)
+    val_meter = ValMeter(len(val_loader), cur_episode, cfg.RNG_SEED, hpopt=hpopt)
 
     # Perform the training loop
     # print("Len(train_loader):{}".format(len(train_loader)))
@@ -432,7 +432,7 @@ def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode):
     return best_val_acc, best_val_epoch, checkpoint_file
 
 
-def test_model(test_loader, checkpoint_file, cfg, cur_episode):
+def test_model(test_loader, checkpoint_file, cfg, cur_episode, hpopt=False):
 
     global plot_episode_xvalues
     global plot_episode_yvalues
