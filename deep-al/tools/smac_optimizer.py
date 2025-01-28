@@ -43,7 +43,9 @@ class SmacTuner:
         # r_n = Integer("RANDAUG.N", (0, 5), default=1, log=False)
         # r_m = Integer("RANDAUG.M", (0, 5), default=5, log=False)
         base_lr = Float("OPTIM.BASE_LR", (0.00001, 0.1), default=0.025, log=True)
-        lr_policy = Categorical("OPTIM.LR_POLICY", ['cos','exp', 'steps', 'lin', 'none'], default='cos')
+        lr_policy = Categorical("OPTIM.LR_POLICY", ['cos',
+                                                    # 'exp', 'steps',
+                                                    'lin', 'none'], default='cos')
         momentum = Float("OPTIM.MOMENTUM", (0.00001, 0.9), default=0.9, log=True)
         wdecay = Float("OPTIM.WEIGHT_DECAY", (0.00001, 0.1), default=0.0003, log=True)
         gamma = Float("OPTIM.GAMMA", (0.00001, 0.1), default=0.1, log=True)
@@ -102,8 +104,7 @@ class SmacTuner:
 
         optimizer = optim.construct_optimizer(new_cfg, model)
 
-        best_val_acc, _, checkpoint_file = self.train_model(self.lSet_loader, self.valSet_loader, model,
-                                             optimizer, new_cfg, self.cur_episode, hpopt=True)
+        best_val_acc, _, checkpoint_file = self.train_model(self.lSet_loader, self.valSet_loader, model, optimizer, new_cfg, self.cur_episode, hpopt=True)
         return 1-best_val_acc
 
     def smac_optimize(self):
