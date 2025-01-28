@@ -7,16 +7,12 @@ import yaml
 from easydict import EasyDict
 from utils.utils import mkdir_if_missing
 
-def create_config(config_file_env, config_file_exp, seed, output_dir=None,
-                  repo_dir=None, num_clusters=None):
+def create_config(config_file_env, config_file_exp, seed, num_clusters=None):
     # Config for environment path
-    if output_dir is None:
-        with open(config_file_env, 'r') as stream:
-            root_dir = yaml.safe_load(stream)['root_dir']
-    else:
-        root_dir = output_dir
+    with open(config_file_env, 'r') as stream:
+        root_dir = yaml.safe_load(stream)['root_dir']
 
-    with open(repo_dir + config_file_exp, 'r') as stream:
+    with open(config_file_exp, 'r') as stream:
         config = yaml.safe_load(stream)
 
     config['seed'] = seed

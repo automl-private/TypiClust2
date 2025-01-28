@@ -16,10 +16,10 @@ import yaml
 from ConfigSpace import ConfigurationSpace, Float, Categorical, Integer, EqualsCondition
 from omegaconf import DictConfig, OmegaConf
 
-from train_al import train_model
 
 class SmacTuner:
-    def __init__(self, cfg, lSet_loader, valSet_loader):
+    def __init__(self, cfg, train_func, lSet_loader, valSet_loader):
+        self.train_model = train_func
         self.base_config  = cfg
         self.g  = self.convert_dot_notation_to_nested(cfg)
         self.lSet_loader = lSet_loader
@@ -30,9 +30,11 @@ class SmacTuner:
     def DCOM_configspace(self):
         cs = ConfigurationSpace(seed=0)
 
-        augment = Categorical("DATASET.AUG_METHOD", ['hflip', 'randaug'], default='hflip')
-        r_n = Integer("RANDAUG.N", (0, 5), default=1, log=False)
-        r_m = Integer("RANDAUG.M", (0, 5), default=5, log=False)
+        augment = Categorical("DATASET.AUG_METHOD", ['hflip',
+                                                     # 'randaug'
+                                                     ], default='hflip')
+        # r_n = Integer("RANDAUG.N", (0, 5), default=1, log=False)
+        # r_m = Integer("RANDAUG.M", (0, 5), default=5, log=False)
         base_lr = Float("OPTIM.BASE_LR", (0.00001, 0.1), default=0.025, log=True)
         lr_policy = Categorical("OPTIM.LR_POLICY", ['cos','exp', 'steps', 'lin', 'none'], default='cos')
         momentum = Float("OPTIM.MOMENTUM", (0.00001, 0.9), default=0.9, log=True)
@@ -42,9 +44,11 @@ class SmacTuner:
         # hflip is default, but to use randaug, condition necessary according to:
         # https://github.com/automl-private/TypiClust2/blob /a29b2cc8b6676e56197463b74e0994d9e2c753d3
         # /deep-al/pycls/datasets/data.py#L154
-        cs.add_hyperparameters([augment, r_n, r_m, base_lr, lr_policy, momentum, wdecay, gamma])
-        cs.add_condition(EqualsCondition(r_n, augment, 'randaug'))
-        cs.add_condition(EqualsCondition(r_m, augment, 'randaug'))
+        cs.add_hyperparameters([augment,
+                                # r_n, r_m,
+                                base_lr, lr_policy, momentum, wdecay, gamma])
+        # cs.add_condition(EqualsCondition(r_n, augment, 'randaug'))
+        # cs.add_condition(EqualsCondition(r_m, augment, 'randaug'))
         return cs
 
 
@@ -88,14 +92,15 @@ class SmacTuner:
         new_cfg = OmegaConf.merge(self.base_config, DictConfig(self.g), DictConfig(c))
 
         model =  resnet18(num_classes=10, use_dropout=True)
-        
+
         optimizer = optim.construct_optimizer(new_cfg, model)
 
-        best_val_acc, _, checkpoint_file = train_model(self.lSet_loader, self.valSet_loader, model, optimizer, new_cfg)
+        best_val_acc, _, checkpoint_file = self.train_model(self.lSet_loader, self.valSet_loader, model,
+                                             optimizer, new_cfg)
         return 1-best_val_acc
 
     def smac_optimize(self):
-            
+
         cs = self.DCOM_configspace()
 
         # SMAC scenario object
@@ -122,7 +127,7 @@ class SmacTuner:
             incumbent = smac.optimize()
         finally:
             incumbent = smac.solver.incumbent
-        
+
         c = self.convert_dot_notation_to_nested(incumbent)
         new_cfg = OmegaConf.merge(self.base_config, DictConfig(self.g), DictConfig(c))
 
