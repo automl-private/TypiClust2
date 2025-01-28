@@ -352,8 +352,7 @@ class ValMeter(object):
         stats = self.get_epoch_stats(cur_epoch)
         lu.log_json_stats(stats)
         self.filelogger.add_scalar(self.cur_iter, int(stats["epoch"].split('/')[0]),
-                                   (stats['top1_err'],
-                                                             stats['min_top1_err']))
+                                   stats['top1_err'], stats['min_top1_err'])
 
 
     def close(self):
