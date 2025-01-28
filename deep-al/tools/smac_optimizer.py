@@ -1,5 +1,5 @@
 import logging
-
+import pdb
 logging.basicConfig(level=logging.INFO)
 
 
@@ -16,10 +16,16 @@ import yaml
 from ConfigSpace import ConfigurationSpace, Float, Categorical, Integer, EqualsCondition
 from omegaconf import DictConfig, OmegaConf
 
+import yaml
+
+from yacs.config import CfgNode
 
 class SmacTuner:
     def __init__(self, cfg, train_func, lSet_loader, valSet_loader):
+
         self.train_model = train_func
+        pdb.set_trace()
+        cfg = yaml.safe_load(cfg.dump())
         self.base_config  = cfg
         self.g  = self.convert_dot_notation_to_nested(cfg)
         self.lSet_loader = lSet_loader
@@ -88,8 +94,9 @@ class SmacTuner:
 
 
     def tae_runner(self, cfg, seed=0, budget=0):
+        pdb.set_trace()
         c = self.convert_dot_notation_to_nested(cfg)
-        new_cfg = OmegaConf.merge(self.base_config, DictConfig(self.g), DictConfig(c))
+        new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
 
         model =  resnet18(num_classes=10, use_dropout=True)
 
@@ -100,7 +107,7 @@ class SmacTuner:
         return 1-best_val_acc
 
     def smac_optimize(self):
-
+        
         cs = self.DCOM_configspace()
 
         # SMAC scenario object
@@ -129,6 +136,10 @@ class SmacTuner:
             incumbent = smac.solver.incumbent
 
         c = self.convert_dot_notation_to_nested(incumbent)
-        new_cfg = OmegaConf.merge(self.base_config, DictConfig(self.g), DictConfig(c))
+        new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
 
+        pdb.set_trace()
+        new_cfg = OmegaConf.to_container(new_cfg, resolve=True)
+        
+        new_cfg = CfgNode(new_cfg)
         return new_cfg
