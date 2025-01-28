@@ -98,7 +98,7 @@ def main(cfg):
     # print("Using GPU : {}.\n".format(cfg.GPU_ID))
 
     # Getting the output directory ready (default is "/output")
-    cfg.OUT_DIR = os.path.join(os.path.abspath('../..'), cfg.OUT_DIR)
+    # cfg.OUT_DIR = os.path.join(os.path.abspath('../..'), cfg.OUT_DIR)
     if not os.path.exists(cfg.OUT_DIR):
         os.makedirs(cfg.OUT_DIR, exist_ok=True)
     # Create "DATASET/MODEL TYPE" specific directory
@@ -629,7 +629,6 @@ if __name__ == "__main__":
     args = argparser().parse_args()
     cfg.merge_from_file(args.cfg_file)
     cfg.OUT_DIR = args.output_dir
-    cfg.DATASET.ROOT_DIR = args.data_dir
     cfg.EXP_NAME = args.exp_name
     cfg.ACTIVE_LEARNING.SAMPLING_FN = args.al
     cfg.ACTIVE_LEARNING.BUDGET_SIZE = args.budget
