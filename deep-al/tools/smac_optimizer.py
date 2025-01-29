@@ -45,7 +45,7 @@ class SmacTuner:
         self.scenario_kwargs = scenario_kwargs
         self.file_buffer = BufferedFileLogger(
                 file_name='smac_optimization.csv',
-                file_path=self.experiment_cfg.OUTPUT_DIR,
+                file_path=self.experiment_cfg.EXP_DIR,
                 buffer_size=1000,
                 header=("config", "performance", "al_step"),
                 mode='a'
