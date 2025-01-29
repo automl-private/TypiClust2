@@ -179,7 +179,7 @@ def main(cfg):
     test_loader = data_obj.getTestLoader(data=test_data, test_batch_size=cfg.TRAIN.BATCH_SIZE, seed_id=cfg.RNG_SEED)
 
     #SMAC
-    smac = SmacTuner(cfg, train_model, lSet_loader, valSet_loader, cur_episode=0)
+    smac = SmacTuner(cfg, train_model, lSet_loader, valSet_loader, cur_episode=-1)
     cfg = smac.smac_optimize()
 
 

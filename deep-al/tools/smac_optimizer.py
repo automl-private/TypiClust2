@@ -19,6 +19,7 @@ from omegaconf import DictConfig, OmegaConf
 from yacs.config import CfgNode
 
 import yaml
+from pycls.utils.meters import BufferedFileLogger
 
 from yacs.config import CfgNode
 
@@ -42,6 +43,13 @@ class SmacTuner:
         self.cur_episode = cur_episode
         self.intensifier_kwargs = intensifier_kwargs
         self.scenario_kwargs = scenario_kwargs
+        self.file_buffer = BufferedFileLogger(
+                file_name='smac_optimization.csv',
+                file_path=self.experiment_cfg.OUTPUT_DIR,
+                buffer_size=1000,
+                header=("config", "performance", "al_step"),
+                mode='a'
+            )
 
     @property
     def DCOM_configspace(self):
@@ -129,7 +137,8 @@ class SmacTuner:
                 hpopt=True,  # indicator to avoid messing up logs
                 max_epoch=int(budget)
             )
-
+        self.file_buffer.add_scalar(f"{str(cfg)}", f"{1 - best_val_acc}", f"{self.cur_episode}")
+        self.file_buffer._flush()
         logger.info(f"SMAC finished with validation accuracy: {1- best_val_acc}")
         return 1 - best_val_acc
 
