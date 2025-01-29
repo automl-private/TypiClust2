@@ -1,4 +1,6 @@
 import logging
+import os
+import tempfile
 
 logging.basicConfig(level=logging.INFO)
 
@@ -31,6 +33,7 @@ class SmacTuner:
                  scenario_kwargs={"runcount-limit": 10}):
         self.train_model = train_func
 
+        self.experiment_cfg = cfg
         cfg = yaml.safe_load(cfg.dump())
         self.base_config = cfg
         self.g = self.convert_dot_notation_to_nested(cfg)
@@ -103,6 +106,7 @@ class SmacTuner:
         return nested_dict
 
     def tae_runner(self, cfg, seed=0, budget=0):
+
         logger.info(f"Running SMAC with config: {cfg} and budget: {budget}")
 
         c = self.convert_dot_notation_to_nested(cfg)
@@ -111,15 +115,17 @@ class SmacTuner:
         model = resnet18(num_classes=10, use_dropout=True)
 
         optimizer = optim.construct_optimizer(new_cfg, model)
-        import pdb
-        pdb.set_trace()
-        best_val_acc, _, checkpoint_file = self.train_model(
-            self.lSet_loader, self.valSet_loader,
-            model, optimizer, new_cfg,
-            self.cur_episode,
-            hpopt=True,  # indicator to avoid messing up logs
-            max_epoch=int(budget)
-        )
+
+        with tempfile.TemporaryDirectory() as episode_dir:
+            self.experiment_cfg.EPISODE_DIR = episode_dir
+
+            best_val_acc, _, checkpoint_file = self.train_model(
+                self.lSet_loader, self.valSet_loader,
+                model, optimizer, new_cfg,
+                self.cur_episode,
+                hpopt=True,  # indicator to avoid messing up logs
+                max_epoch=int(budget)
+            )
 
         logger.info(f"SMAC finished with validation accuracy: {1- best_val_acc}")
         return 1 - best_val_acc
