@@ -20,6 +20,10 @@ import yaml
 
 from yacs.config import CfgNode
 
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class SmacTuner:
     def __init__(self, cfg, train_func, lSet_loader, valSet_loader, cur_episode,
@@ -36,6 +40,7 @@ class SmacTuner:
         self.intensifier_kwargs = intensifier_kwargs
         self.scenario_kwargs = scenario_kwargs
 
+    @property
     def DCOM_configspace(self):
         cs = ConfigurationSpace(seed=0)
 
@@ -98,13 +103,16 @@ class SmacTuner:
         return nested_dict
 
     def tae_runner(self, cfg, seed=0, budget=0):
+        logger.info(f"Running SMAC with config: {cfg} and budget: {budget}")
+
         c = self.convert_dot_notation_to_nested(cfg)
         new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
 
         model = resnet18(num_classes=10, use_dropout=True)
 
         optimizer = optim.construct_optimizer(new_cfg, model)
-
+        import pdb
+        pdb.set_trace()
         best_val_acc, _, checkpoint_file = self.train_model(
             self.lSet_loader, self.valSet_loader,
             model, optimizer, new_cfg,
@@ -112,11 +120,13 @@ class SmacTuner:
             hpopt=True,  # indicator to avoid messing up logs
             max_epoch=int(budget)
         )
+
+        logger.info(f"SMAC finished with validation accuracy: {1- best_val_acc}")
         return 1 - best_val_acc
 
     def smac_optimize(self):
 
-        cs = self.DCOM_configspace()
+        cs = self.DCOM_configspace
 
         # SMAC scenario object
         scenario = Scenario(
@@ -140,6 +150,8 @@ class SmacTuner:
             incumbent = smac.optimize()
         finally:
             incumbent = smac.solver.incumbent
+
+        logger.info(f"SMAC final incumbent: {incumbent}")
 
         # convert incumbent configuration to CfgNode
         c = self.convert_dot_notation_to_nested(incumbent)
