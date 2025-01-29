@@ -215,8 +215,10 @@ def main(cfg):
         print("======== TRAINING ========")
         logger.info("======== TRAINING ========")
 
-        best_val_acc, best_val_epoch, checkpoint_file = train_model(lSet_loader, valSet_loader,
-                                                                    model, optimizer, cfg, cur_episode)
+        best_val_acc, best_val_epoch, checkpoint_file = train_model(
+            lSet_loader, valSet_loader, model, optimizer, cfg, cur_episode,
+            max_epoch=cfg.OPTIM.MAX_EPOCH
+        )
 
         print("Best Validation Accuracy: {}\nBest Epoch: {}\n".format(round(best_val_acc, 4), best_val_epoch))
         logger.info("EPISODE {} Best Validation Accuracy: {}\tBest Epoch: {}\n".format(cur_episode, round(best_val_acc, 4), best_val_epoch))
@@ -313,7 +315,8 @@ def main(cfg):
 
 
 
-def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode, hpopt=False):
+def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode, max_epoch,
+                hpopt=False):
     global plot_episode_xvalues
     global plot_episode_yvalues
 
@@ -345,11 +348,11 @@ def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode, hp
     val_acc_epochs_x = []
     val_acc_epochs_y = []
 
-    clf_train_iterations = cfg.OPTIM.MAX_EPOCH * int(len(train_loader)/cfg.TRAIN.BATCH_SIZE)
+    clf_train_iterations = max_epoch * int(len(train_loader)/cfg.TRAIN.BATCH_SIZE)
     clf_change_lr_iter = clf_train_iterations // 25
     clf_iter_count = 0
 
-    for cur_epoch in range(start_epoch, cfg.OPTIM.MAX_EPOCH):
+    for cur_epoch in range(start_epoch, max_epoch):
 
         # Train for one epoch
         train_loss, clf_iter_count = train_epoch(train_loader, model, loss_fun, optimizer, train_meter, \
@@ -400,7 +403,7 @@ def train_model(train_loader, val_loader, model, optimizer, cfg, cur_episode, hp
         # save_plot_values([plot_epoch_xvalues, plot_epoch_yvalues, plot_it_x_values, plot_it_y_values, val_acc_epochs_x, val_acc_epochs_y], \
         #         ["plot_epoch_xvalues", "plot_epoch_yvalues", "plot_it_x_values", "plot_it_y_values","val_acc_epochs_x","val_acc_epochs_y"], out_dir=cfg.EPISODE_DIR)
 
-        print('Training Epoch: {}/{}\tTrain Loss: {}\tVal Accuracy: {}'.format(cur_epoch+1, cfg.OPTIM.MAX_EPOCH, round(train_loss, 4), round(val_set_acc, 4)))
+        print('Training Epoch: {}/{}\tTrain Loss: {}\tVal Accuracy: {}'.format(cur_epoch+1, max_epoch, round(train_loss, 4), round(val_set_acc, 4)))
 
     # Save the best model checkpoint (Episode level)
     checkpoint_file = cu.save_checkpoint(info="vlBest_acc_"+str(int(temp_best_val_acc)), \

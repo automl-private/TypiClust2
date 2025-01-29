@@ -2,7 +2,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-
 import numpy as np
 
 from smac.facade.smac_mf_facade import SMAC4MF
@@ -21,18 +20,21 @@ import yaml
 
 from yacs.config import CfgNode
 
+
 class SmacTuner:
-    def __init__(self, cfg, train_func, lSet_loader, valSet_loader, cur_episode):
+    def __init__(self, cfg, train_func, lSet_loader, valSet_loader, cur_episode,
+                 intensifier_kwargs={"initial_budget": 5, "max_budget": 30, "eta": 3},
+                 scenario_kwargs={"runcount-limit": 10}):
         self.train_model = train_func
 
         cfg = yaml.safe_load(cfg.dump())
-        self.base_config  = cfg
-        self.g  = self.convert_dot_notation_to_nested(cfg)
+        self.base_config = cfg
+        self.g = self.convert_dot_notation_to_nested(cfg)
         self.lSet_loader = lSet_loader
         self.valSet_loader = valSet_loader
         self.cur_episode = cur_episode
-
-
+        self.intensifier_kwargs = intensifier_kwargs
+        self.scenario_kwargs = scenario_kwargs
 
     def DCOM_configspace(self):
         cs = ConfigurationSpace(seed=0)
@@ -53,20 +55,20 @@ class SmacTuner:
         # hflip is default, but to use randaug, condition necessary according to:
         # https://github.com/automl-private/TypiClust2/blob /a29b2cc8b6676e56197463b74e0994d9e2c753d3
         # /deep-al/pycls/datasets/data.py#L154
-        cs.add_hyperparameters([augment,
-                                # r_n, r_m,
-                                base_lr, lr_policy, momentum, wdecay, gamma])
+        cs.add_hyperparameters([
+            augment,
+            # r_n, r_m,
+            base_lr, lr_policy, momentum, wdecay, gamma
+        ])
         # cs.add_condition(EqualsCondition(r_n, augment, 'randaug'))
         # cs.add_condition(EqualsCondition(r_m, augment, 'randaug'))
         return cs
-
 
     def parse_config(self, config_path):
         """read yaml file and return DictConfig object"""
         with open(config_path, 'r') as f:
             cfg = yaml.safe_load(f)
         return DictConfig(cfg)
-
 
     def convert_dot_notation_to_nested(self, dictionary):
         """
@@ -95,17 +97,22 @@ class SmacTuner:
             d[keys[-1]] = value
         return nested_dict
 
-
     def tae_runner(self, cfg, seed=0, budget=0):
         c = self.convert_dot_notation_to_nested(cfg)
         new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
 
-        model =  resnet18(num_classes=10, use_dropout=True)
+        model = resnet18(num_classes=10, use_dropout=True)
 
         optimizer = optim.construct_optimizer(new_cfg, model)
 
-        best_val_acc, _, checkpoint_file = self.train_model(self.lSet_loader, self.valSet_loader, model, optimizer, new_cfg, self.cur_episode, hpopt=True)
-        return 1-best_val_acc
+        best_val_acc, _, checkpoint_file = self.train_model(
+            self.lSet_loader, self.valSet_loader,
+            model, optimizer, new_cfg,
+            self.cur_episode,
+            hpopt=True,  # indicator to avoid messing up logs
+            max_epoch=int(budget)
+        )
+        return 1 - best_val_acc
 
     def smac_optimize(self):
 
@@ -117,18 +124,16 @@ class SmacTuner:
                 "run_obj": "quality",  # we optimize quality (alternative to runtime)
                 "cs": cs,  # configuration space
                 "deterministic": True,
-                "runcount-limit": 10
+                **self.scenario_kwargs
             }
         )
-
-        intensifier_kwargs = {"initial_budget": 5, "max_budget": 30, "eta": 3}
 
         # To optimize, we pass the function to the SMAC-object
         smac = SMAC4MF(
             scenario=scenario,
             rng=np.random.RandomState(42),
             tae_runner=self.tae_runner,
-            intensifier_kwargs=intensifier_kwargs,
+            intensifier_kwargs=self.intensifier_kwargs,
         )
 
         try:
@@ -136,11 +141,9 @@ class SmacTuner:
         finally:
             incumbent = smac.solver.incumbent
 
+        # convert incumbent configuration to CfgNode
         c = self.convert_dot_notation_to_nested(incumbent)
         new_cfg = OmegaConf.merge(DictConfig(self.base_config), DictConfig(self.g), DictConfig(c))
-
-
         new_cfg = OmegaConf.to_container(new_cfg, resolve=True)
-
         new_cfg = CfgNode(new_cfg)
         return new_cfg
