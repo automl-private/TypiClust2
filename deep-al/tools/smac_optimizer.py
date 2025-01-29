@@ -117,7 +117,10 @@ class SmacTuner:
         optimizer = optim.construct_optimizer(new_cfg, model)
 
         with tempfile.TemporaryDirectory() as episode_dir:
-            self.experiment_cfg.EPISODE_DIR = episode_dir
+            new_cfg.EPISODE_DIR = episode_dir
+
+            new_cfg = OmegaConf.to_container(new_cfg, resolve=True)
+            new_cfg = CfgNode(new_cfg)
 
             best_val_acc, _, checkpoint_file = self.train_model(
                 self.lSet_loader, self.valSet_loader,
