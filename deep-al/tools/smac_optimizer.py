@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 
 class SmacTuner:
     def __init__(self, cfg, train_func, lSet_loader, valSet_loader, cur_episode,
-                 intensifier_kwargs={"initial_budget": 5, "max_budget": 30, "eta": 3},
-                 scenario_kwargs={"n_trials": 200}):
+                 intensifier_kwargs={"initial_budget": 5, "max_budget": 200, "eta": 3},
+                 scenario_kwargs={"n_trials": 1,  "runcount-limit": 100}):
         self.train_model = train_func
 
         self.experiment_cfg = cfg
